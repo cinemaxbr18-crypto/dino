@@ -1,0 +1,112 @@
+/* Estilos básicos */
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f7f7f7;
+    margin-top: 50px;
+    overflow: hidden; /* Impede scroll desnecessário */
+}
+
+/* A área do jogo */
+#game-container {
+    width: 900px; /* Aumentei a largura para se parecer mais com o original */
+    height: 200px;
+    border: 2px solid #333;
+    margin: auto;
+    position: relative;
+    overflow: hidden;
+    background-color: #f0f0f0; /* Um fundo mais claro */
+}
+
+/* O CHÃO */
+#ground {
+    width: 1800px; /* Maior ainda para o novo tamanho do container */
+    height: 12px; /* Altura do seu chão */
+    background-image: url('https://i.imgur.com/v1hG0yG.png'); /* Exemplo de imagem de chão */
+    background-repeat: repeat-x;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    animation: moveGround 2s linear infinite; /* Animação padrão */
+}
+
+/* O DINOSSAURO (Usando Sprite Sheet) */
+#dino {
+    /* Largura e altura de CADA FRAME na sua sprite sheet */
+    width: 60px; /* Olhando para sua imagem, um frame parece ter uns 60px de largura */
+    height: 60px; /* E uns 60px de altura */
+    
+    position: absolute;
+    bottom: 0;
+    left: 50px;
+
+    /* SUA IMAGEM DA SPRITE SHEET AQUI! */
+    background-image: url('dino_sprite.png'); /* SALVE SUA IMAGEM 1 COMO 'dino_sprite.png' */
+    background-size: auto 100%; /* Isso faz a altura da sprite sheet caber na altura do dino div */
+    background-repeat: no-repeat;
+    background-position: 0 0; /* Começa mostrando o primeiro frame */
+
+    /* Animação para "andar" */
+    animation: dinoRun 0.6s steps(4) infinite; /* steps(4) porque a primeira linha tem 4 frames de corrida */
+}
+
+/* Animação de Pulo (quando o dino está pulando) */
+.jump-animation {
+    /* Quando pula, queremos uma imagem específica (o frame de pulo) */
+    background-position: -360px 0 !important; /* Ajuste este valor! Na sua sprite, o pulo é o frame 6 (5x60px=300px), mas parece estar na 2ª linha */
+    animation: jump 0.5s linear forwards; /* 'forwards' para manter a posição final do pulo */
+}
+
+/* O OBSTÁCULO (Cacto) */
+#obstacle {
+    /* Dimensões da sua imagem de cacto */
+    width: 30px; /* Ajuste para o tamanho real do seu cacto */
+    height: 60px; /* Ajuste para o tamanho real do seu cacto */
+
+    position: absolute;
+    bottom: 0;
+    left: 900px; /* Começa fora da tela (nova largura do game-container) */
+
+    /* SUA IMAGEM DO CACTO AQUI! */
+    background-image: url('cactus.png'); /* SALVE SUA IMAGEM 2 COMO 'cactus.png' */
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: bottom center; /* Garante que o cacto fique no chão e centralizado */
+    
+    /* Animação do movimento do obstáculo */
+    animation: moveObstacle 2s linear infinite;
+}
+
+/* Placar */
+#score {
+    font-size: 24px;
+    margin-top: 20px;
+    color: #333;
+}
+
+/* --- DEFINIÇÃO DAS ANIMAÇÕES (Keyframes) --- */
+
+/* Animação de corrida do dinossauro */
+@keyframes dinoRun {
+    from { background-position: 0 0; }
+    to { background-position: -240px 0; } /* 4 frames * 60px/frame = 240px. Isso para a PRIMEIRA LINHA */
+}
+
+/* Animação que move o obstáculo */
+@keyframes moveObstacle {
+    from { left: 900px; } /* Nova largura do game-container */
+    to { left: -30px; } /* Largura do obstáculo */
+}
+
+/* Animação do pulo (só o movimento vertical) */
+@keyframes jump {
+    0% { bottom: 0; }
+    50% { bottom: 100px; }
+    100% { bottom: 0; }
+}
+
+/* Animação do chão (ajustado para nova largura) */
+@keyframes moveGround {
+    from { background-position-x: 0; }
+    to { background-position-x: -900px; } /* Deve mover a mesma largura do container para simular loop */
+}
