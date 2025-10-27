@@ -1,100 +1,140 @@
-// Seleciona os elementos do DOM
+// ==========================================================
+// VARIÁVEIS DO JOGO E SELEÇÃO DE ELEMENTOS
+// ==========================================================
 const dino = document.getElementById('dino');
 const obstacle = document.getElementById('obstacle');
+const ground = document.getElementById('ground');
 const scoreDisplay = document.getElementById('score');
-const ground = document.getElementById('ground'); // Adicionado o chão
 
-// Variáveis de estado do jogo
+// Configurações e estado do jogo
+const DINO_WIDTH = 80;
+const DINO_HEIGHT = 80;
+const CACTUS_WIDTH = 30;
+const JUMP_DURATION = 500; // Milissegundos (deve ser igual ao CSS)
 let isJumping = false;
 let isGameOver = false;
 let score = 0;
-let gameSpeed = 2000; // Duração da animação (em ms)
+let gameSpeed = 2000; // Duração da animação do obstáculo em ms (2s)
 
-// Event listener para o pulo (detecta a tecla "Espaço")
+// ==========================================================
+// CONTROLE DO DINOSSAURO (PULO)
+// ==========================================================
+
+function jump() {
+    if (isJumping || isGameOver) return;
+
+    isJumping = true;
+    
+    // 1. Remove a animação de corrida para exibir o frame de pulo no CSS
+    dino.style.animation = 'none'; 
+    // 2. Adiciona a classe que move o dino verticalmente
+    dino.classList.add('jump-animation');
+
+    // 3. Após o pulo, remove a classe e restaura a corrida
+    setTimeout(() => {
+        dino.classList.remove('jump-animation');
+        // 4. Retoma a animação de corrida (steps(4) é a animação definida no CSS)
+        dino.style.animation = 'dinoRun 0.4s steps(4) infinite'; 
+        isJumping = false;
+    }, JUMP_DURATION);
+}
+
+// Event listener para o pulo e reinício do jogo
 document.addEventListener('keydown', function (event) {
-    if (event.code === 'Space' && !isJumping && !isGameOver) {
-        jump();
-    } 
-    else if (event.code === 'Space' && isGameOver) {
-        resetGame();
+    if (event.code === 'Space') {
+        if (isGameOver) {
+            resetGame();
+        } else {
+            jump();
+        }
     }
 });
 
-// Função de Pulo
-function jump() {
-    isJumping = true;
-    dino.classList.remove('dinoRun'); // Remove a animação de corrida para usar o frame de pulo
-    dino.classList.add('jump-animation');
+// ==========================================================
+// LOOP PRINCIPAL DO JOGO (COLISÃO E PONTUAÇÃO)
+// ==========================================================
 
-    setTimeout(() => {
-        dino.classList.remove('jump-animation');
-        dino.classList.add('dinoRun'); // Retorna a animação de corrida
-        isJumping = false;
-    }, 500); // Duração do pulo
-}
-
-// Loop principal do jogo (Game Loop)
 let gameLoop = setInterval(() => {
     if (isGameOver) {
         return; 
     }
 
-    // Pega as posições atuais
+    // Pega as posições atuais do dino e do obstáculo
     let dinoBottom = parseInt(window.getComputedStyle(dino).getPropertyValue('bottom'));
     let obstacleLeft = parseInt(window.getComputedStyle(obstacle).getPropertyValue('left'));
+    let dinoLeft = parseInt(window.getComputedStyle(dino).getPropertyValue('left'));
 
-    // Lógica de Detecção de Colisão
-    // Ajustada para as novas dimensões e a imagem do cacto
-    if (obstacleLeft < 90 && obstacleLeft > 30 && dinoBottom < 50) { // Ajuste esses números se a colisão não estiver boa
+    // LÓGICA DE DETECÇÃO DE COLISÃO
+    // Verifica se o obstáculo está no espaço horizontal do dino
+    let isHorizontalCollision = (obstacleLeft < (dinoLeft + DINO_WIDTH - 10)) && 
+                                (obstacleLeft > (dinoLeft - CACTUS_WIDTH + 10));
+
+    // Verifica se o dino está baixo o suficiente para bater
+    // O cacto tem 50px de altura, então o dino bate se estiver abaixo de ~45px
+    let isVerticalCollision = dinoBottom < 50; 
+
+    if (isHorizontalCollision && isVerticalCollision) {
         // Colisão detectada!
-        isGameOver = true;
-        
-        // Para todas as animações
-        obstacle.style.animation = 'none';
-        ground.style.animation = 'none';
-        dino.style.animation = 'none'; // Para o dino no último frame
-        
-        // Exibe o frame de "game over" do dino (se você tiver um)
-        // Por exemplo, na sua sprite sheet, o frame do dinossauro "morto" parece ser o último da primeira linha ou um na terceira.
-        // Se for o último da primeira linha (frame 6, 5*60px = 300px), você pode usar:
-        dino.style.backgroundPosition = '-300px 0'; // Ajuste este valor!
-
-        alert('Game Over! Pontos: ' + score + '\nPressione Espaço para reiniciar.');
+        gameOver();
     } else {
         updateScore();
     }
 
-}, 20); // O loop verifica a cada 20ms
+}, 10); // Verificação mais rápida (a cada 10ms) para melhor precisão
 
-// Função para atualizar a pontuação
+// ==========================================================
+// FUNÇÕES DE CONTROLE DO JOGO
+// ==========================================================
+
 function updateScore() {
     score++;
-    scoreDisplay.textContent = 'Pontos: ' + score;
+    scoreDisplay.textContent = 'Pontos: ' + Math.floor(score / 10); // Mostra pontuação mais lenta
 
-    // Aumenta a dificuldade
-    if (score > 0 && score % 500 === 0 && gameSpeed > 800) {
-        gameSpeed -= 100;
+    // Aumenta a dificuldade a cada 500 pontos reais (5000 no contador)
+    if (score > 0 && score % 5000 === 0 && gameSpeed > 800) {
+        gameSpeed -= 100; // Torna o jogo 100ms mais rápido
         
+        // Aplica a nova velocidade às animações
         obstacle.style.animationDuration = gameSpeed + 'ms';
         ground.style.animationDuration = (gameSpeed / 2) + 'ms'; 
     }
 }
 
-// Função para reiniciar o jogo
+function gameOver() {
+    isGameOver = true;
+    
+    // Para todas as animações
+    obstacle.style.animation = 'none';
+    ground.style.animation = 'none';
+    dino.style.animation = 'none'; 
+    
+    // Exibe o frame de "game over" (O dino morto, 6º frame da 1ª linha: 6 * 80px = 480px)
+    dino.style.backgroundPosition = '-480px 0'; 
+
+    alert('GAME OVER! Pontos Finais: ' + Math.floor(score / 10) + '\nPressione Espaço para reiniciar.');
+}
+
 function resetGame() {
     isGameOver = false;
     score = 0;
     gameSpeed = 2000;
     scoreDisplay.textContent = 'Pontos: 0';
     
-    // Reinicia as animações
+    // Reinicia as animações com a velocidade padrão
     obstacle.style.animation = 'moveObstacle ' + gameSpeed + 'ms linear infinite';
     ground.style.animation = 'moveGround ' + (gameSpeed / 2) + 'ms linear infinite';
     
-    // Reinicia a animação de corrida do dino e o background-position
-    dino.style.animation = 'dinoRun 0.6s steps(4) infinite';
+    // Reinicia a animação de corrida do dino
+    dino.style.animation = 'dinoRun 0.4s steps(4) infinite';
     dino.style.backgroundPosition = '0 0'; // Volta ao primeiro frame
+
+    // Garante que o dino não esteja pulando ao reiniciar
+    isJumping = false;
 }
 
+// ==========================================================
+// INICIALIZAÇÃO
+// ==========================================================
+
 // Inicia a animação de corrida do dinossauro no carregamento
-dino.style.animation = 'dinoRun 0.6s steps(4) infinite';
+dino.style.animation = 'dinoRun 0.4s steps(4) infinite';
